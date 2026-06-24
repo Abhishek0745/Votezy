@@ -2,11 +2,11 @@ package in.scalive.votezy.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+// NO CHANGES from original - kept as is
 @Entity
 @Getter
 @Setter

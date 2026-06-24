@@ -1,61 +1,62 @@
 package in.scalive.votezy.controller;
 
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import in.scalive.votezy.entity.Candidate;
+import in.scalive.votezy.dto.CandidateRequestDTO;
+import in.scalive.votezy.dto.CandidateResponseDTO;
 import in.scalive.votezy.service.CandidateService;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+// ✅ MODIFIED FILE:
+// - Now uses CandidateRequestDTO and CandidateResponseDTO
+// - Add/Update/Delete protected as ADMIN only
+// - GET endpoints are public (configured in SecurityConfig)
 @RestController
 @RequestMapping("/api/candidate")
 @CrossOrigin
+@AllArgsConstructor
 public class CandidateController {
-	private CandidateService candidateService;
 
-	@Autowired
-	public CandidateController(CandidateService candidateService) {
-		this.candidateService = candidateService;
-	}
+    private final CandidateService candidateService;
 
-	@PostMapping("/add")
-	public ResponseEntity<Candidate> registerVoter(@RequestBody @Valid Candidate candidate) {
-		Candidate savedCandidate = candidateService.addCandidate(candidate);
-		return new ResponseEntity<>(savedCandidate, HttpStatus.CREATED);
-	}
+    // PUBLIC: Anyone can view candidates
+    @GetMapping
+    public ResponseEntity<List<CandidateResponseDTO>> getAllCandidates() {
+        return ResponseEntity.ok(candidateService.getAllCandidates());
+    }
 
-	@GetMapping
-	public ResponseEntity<List<Candidate>> getAllCandidate() {
-		List<Candidate> candidateList = candidateService.getAllCandidates();
-		return new ResponseEntity<>(candidateList, HttpStatus.OK);
-	}
+    // PUBLIC: View single candidate
+    @GetMapping("/{id}")
+    public ResponseEntity<CandidateResponseDTO> getCandidateById(@PathVariable Long id) {
+        return ResponseEntity.ok(candidateService.getCandidateById(id));
+    }
 
-	@GetMapping("/{id}")
-	public ResponseEntity<Candidate> getCandidateById(@PathVariable Long id) {
-		Candidate candidate = this.candidateService.getCandidateById(id);
-		return new ResponseEntity<>(candidate, HttpStatus.OK);
-	}
+    // ADMIN only: Add candidate
+    @PostMapping("/add")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CandidateResponseDTO> addCandidate(@RequestBody @Valid CandidateRequestDTO dto) {
+        return new ResponseEntity<>(candidateService.addCandidate(dto), HttpStatus.CREATED);
+    }
 
-	@PutMapping("/update/{id}")
-	public ResponseEntity<Candidate> updateCandidate(@PathVariable Long id, @RequestBody Candidate candidate) {
-		Candidate updatedCandidate = this.candidateService.updateCandidate(id, candidate);
-		return new ResponseEntity<Candidate>(updatedCandidate, HttpStatus.OK);
-	}
+    // ADMIN only: Update candidate
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CandidateResponseDTO> updateCandidate(
+            @PathVariable Long id,
+            @RequestBody @Valid CandidateRequestDTO dto) {
+        return ResponseEntity.ok(candidateService.updateCandidate(id, dto));
+    }
 
-	@DeleteMapping("/delete/{id}")
-	public ResponseEntity<String> deleteCandidate(@PathVariable Long id) {
-		candidateService.deleteCandidate(id);
-		return new ResponseEntity<String>("Candidate with ID:" + id + " deleted successfully", HttpStatus.OK);
-	}
+    // ADMIN only: Delete candidate
+    @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteCandidate(@PathVariable Long id) {
+        candidateService.deleteCandidate(id);
+        return ResponseEntity.ok("Candidate with ID: " + id + " deleted successfully");
+    }
 }
